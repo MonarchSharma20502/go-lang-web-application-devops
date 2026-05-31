@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-web-app
+  # labels:
+  #   app: go-web-app-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: go-web-app
+  template:
+    metadata:
+      labels:
+        app: go-web-app
+    spec:
+      containers:
+      - name: go-web-app
+        # The value below must have dockerhub username and the image name as per the dockerhub repository so that it can pull the image from dockerhub and deploy it in kubernetes cluster
+        image: monarchsharma/go-lang-web-application-devops:latest
+        ports:
+        - containerPort: 8080
