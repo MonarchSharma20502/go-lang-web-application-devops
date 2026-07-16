@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-web-app
+  labels:
+    app: go-web-app
+    cloud: azure
+spec:
+  selector:
+    app: go-web-app
+  ports:
+  - port: 80  # Port on which the service will be exposed (it must be the same for the port defined in the deployment.yaml file for the pods to which this service will route the traffic)
+    targetPort: 8080  # Port inside the container on which the application is running
+    protocol: TCP
+  type: ClusterIP
