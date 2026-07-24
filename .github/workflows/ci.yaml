@@ -1,0 +1,92 @@
+name: Go CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - 'helm/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.22
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Build Go Application
+        run: go build -o go-web-app
+
+      - name: Run Tests
+        run: go test ./...
+
+  code-quality:
+    name: Run Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.56.2
+
+  push:
+    runs-on: ubuntu-latest
+
+    needs: build
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+    - name: Build and Push action
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/go-web-app:${{github.run_id}}
+      
+  update-newtag-in-helm-chart:
+    runs-on: ubuntu-latest
+
+    needs: push # This stage only works when the above stage completes successfully (i.e., new tag is generated).
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.TOKEN }} # We must create a Secret on GitHub for PAT Token
+
+    - name: Update tag in Helm chart
+      run: |
+        sed -i 's/tag: .* /tag: "${{github.run_id}}"/' helm/go-web-app-chart/values.yaml
+
+    - name: Commit and push changes
+      run: |
+        git config -global user.email "monarchsharma.m20@gmail.com"
+        git config -global user.name "Monarch Sharma"
+        git add helm/go-web-app-chart/values.yaml
+        git commit -m "Update tag in Helm chart"
+        git push
