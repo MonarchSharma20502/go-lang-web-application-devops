@@ -77,7 +77,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.TOKEN }} # We must create a Secret on GitHub for PAT Token
+        token: ${{ secrets.TOKEN }} # We must create a Secret on GitHub for PAT Token (To authenticate for pushing the code to the GitHub Repository)
 
     - name: Update tag in Helm chart
       run: |
@@ -88,8 +88,8 @@ jobs:
       # This below code again pushes the updated values.yaml file to the same repo with latest changes.
     - name: Commit and push changes
       run: |
-        git config -global user.email "monarchsharma.m20@gmail.com"
-        git config -global user.name "Monarch Sharma"
+        git config --global user.email "monarchsharma.m20@gmail.com"
+        git config --global user.name "Monarch Sharma"
         git add helm/go-web-app-chart/values.yaml
         git commit -m "Update tag in Helm chart"
         git push
